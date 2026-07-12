@@ -54,7 +54,7 @@ You need both. The helper apps let you sideload FreeFCC onto the RC2.
 
 | Drone | Controller | FCC | 4G | LED | Status |
 |-------|-----------|-----|-----|-----|--------|
-| DJI Mini 5 Pro | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Mini 5 Pro | RC2 | Yes | Not tested | Yes | FCC + LED working |
 | DJI Neo 1 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Neo 2 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Avata 360 | RC2 | Yes | Not tested | Not tested | FCC working |

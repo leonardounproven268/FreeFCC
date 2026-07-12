@@ -197,7 +197,11 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
 
     // --- FCC ---
 
-    /** Sends the 21-frame FCC unlock profile (2 rounds, 150ms between frames). */
+    /**
+     * Sends the 21-frame FCC unlock profile. Runs the full sequence twice
+     * with a 1-second delay between runs for reliability. The JSON profile
+     * already specifies 2 rounds internally, so this gives 4 total passes.
+     */
     fun enableFcc() {
         update { copy(status = "applying", isBusy = true, busyProgress = 0f, message = "Enabling FCC mode...") }
         log("Enabling FCC mode...")
@@ -206,16 +210,32 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
             val profile = Profiles.load(app, "fcc.json")
             log("Loaded FCC profile: ${profile.frames.size} frames, ${profile.rounds} rounds")
 
-            val success = transport.sendFrames(
-                frames = profile.frames,
-                rounds = profile.rounds,
-                interFrameDelayMs = profile.interFrameDelay,
-                interRoundDelayMs = profile.interRoundDelay,
-                readWindowMs = profile.readWindowMs,
-                port = profile.port
-            ) { progress -> update { copy(busyProgress = progress) } }
+            var anySuccess = false
 
-            if (success) {
+            // Run the full profile twice with a 1-second delay for reliability
+            for (attempt in 0 until 2) {
+                if (attempt > 0) {
+                    log("FCC retry ${attempt + 1}...")
+                    delay(1000)
+                }
+
+                val success = transport.sendFrames(
+                    frames = profile.frames,
+                    rounds = profile.rounds,
+                    interFrameDelayMs = profile.interFrameDelay,
+                    interRoundDelayMs = profile.interRoundDelay,
+                    readWindowMs = profile.readWindowMs,
+                    port = profile.port
+                ) { progress ->
+                    // Scale progress across both attempts: 0..0.5 for first, 0.5..1 for second
+                    val scaled = (attempt + progress) / 2f
+                    update { copy(busyProgress = scaled) }
+                }
+
+                if (success) anySuccess = true
+            }
+
+            if (anySuccess) {
                 update {
                     copy(
                         status = "fcc_enabled",
@@ -336,6 +356,7 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
      * Turns the aircraft arm LEDs on or off.
      * Uses port 40007 (different from the standard 40009 DUMPL port).
      * Requires DJI Fly running with the aircraft connected.
+     * Sends the command twice with a 500ms delay for reliability.
      *
      * @param on true for LED ON, false for LED OFF
      */
@@ -348,16 +369,27 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
             val profile = Profiles.load(app, fileName)
             log("Loaded LED profile: ${profile.frames.size} frames (port ${profile.port})")
 
-            val success = transport.sendFrames(
-                frames = profile.frames,
-                rounds = profile.rounds,
-                interFrameDelayMs = profile.interFrameDelay,
-                interRoundDelayMs = profile.interRoundDelay,
-                readWindowMs = profile.readWindowMs,
-                port = profile.port
-            )
+            var anySuccess = false
 
-            if (success) {
+            // Send the LED command twice with a 500ms delay for reliability
+            for (attempt in 0 until 2) {
+                if (attempt > 0) {
+                    delay(500)
+                }
+
+                val success = transport.sendFrames(
+                    frames = profile.frames,
+                    rounds = profile.rounds,
+                    interFrameDelayMs = profile.interFrameDelay,
+                    interRoundDelayMs = profile.interRoundDelay,
+                    readWindowMs = profile.readWindowMs,
+                    port = profile.port
+                )
+
+                if (success) anySuccess = true
+            }
+
+            if (anySuccess) {
                 update { copy(isLedBusy = false, ledStatus = if (on) "ON" else "OFF") }
                 log(if (on) "LEDs turned on" else "LEDs turned off")
             } else {
