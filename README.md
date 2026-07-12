@@ -8,7 +8,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/doesthings/FreeFCC?style=flat-square)](https://github.com/doesthings/FreeFCC/releases)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white)](https://ko-fi.com/freefcc)
 
-A free and open-source Android app that unlocks FCC mode, enables 4G transmission, and queries device info on DJI controllers (RC2, RC Pro, RC Plus). No server. No license. No tracking. Just raw DUMPL commands from JSON profile files.
+A free and open-source Android app that unlocks FCC mode, enables 4G transmission, and queries device info on DJI controllers. Currently only tested on the RC2. No server. No license. No tracking. Just raw DUMPL commands from JSON profile files.
 
 </div>
 
@@ -50,15 +50,17 @@ You need both. The helper apps let you sideload FreeFCC onto the RC2.
 
 ## Compatibility
 
-| Drone | Controller | FCC | 4G | Status |
-|-------|-----------|-----|-----|--------|
-| DJI Mini 5 Pro | RC2 | Yes | Not tested | FCC working |
-| DJI Neo 1 | RC2 | Yes | Not tested | FCC working |
-| DJI Neo 2 | RC2 | Yes | Not tested | FCC working |
-| DJI Avata 360 | RC2 | Yes | Not tested | FCC working |
-| Other RC2 aircraft | RC2 | Should work | Unknown | FCC profile is universal |
+**Only tested on the DJI RC2 controller.** Other controllers (RC Pro, RC Plus) are not yet tested.
 
-Tested on DJI RC 2 Remote Controller firmware v10.00.0700. Older firmware versions should also work, and future versions will likely continue to work unless DJI patches the DUMPL param write path. The commands use standard DUMPL protocol operations that have been stable across firmware revisions.
+| Drone | Controller | FCC | 4G | LED | Status |
+|-------|-----------|-----|-----|-----|--------|
+| DJI Mini 5 Pro | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Neo 1 | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Neo 2 | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Avata 360 | RC2 | Yes | Not tested | Not tested | FCC working |
+| Other RC2 aircraft | RC2 | Should work | Unknown | Unknown | FCC profile is universal |
+
+Tested on DJI RC 2 Remote Controller firmware v10.00.0700. Older firmware versions should also work, and future versions will likely continue to work unless DJI patches the DUMPL param write path.
 
 If you test it on a model or firmware version not listed here, please [open an issue](https://github.com/doesthings/FreeFCC/issues) and let me know.
 
