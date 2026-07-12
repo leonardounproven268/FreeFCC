@@ -18,7 +18,7 @@ A free and open-source Android app that unlocks FCC mode, enables 4G transmissio
 >
 > This software is provided for educational and research purposes only. Modifying radio transmission parameters may violate laws and regulations in your country or region. In most places, increasing radio power beyond what is legally permitted for your area requires authorization from the relevant regulatory authority.
 >
-> You are solely responsible for ensuring that your use of this software complies with all applicable local, regional, and national laws. The authors of this project accept no liability for any damage, legal consequences, or regulatory action arising from the use of this tool.
+> You are solely responsible for ensuring that your use of this software complies with all applicable local, regional, and national laws. The author of this project accepts no liability for any damage, legal consequences, or regulatory action arising from the use of this tool.
 >
 > Use only if you have proper authorization to operate in FCC mode in your jurisdiction. If you are unsure whether this is legal where you live, do not use it.
 >
@@ -57,7 +57,7 @@ You need both. The helper apps let you sideload FreeFCC onto the RC2.
 
 Tested on DJI RC 2 Remote Controller firmware v10.00.0700. Older firmware versions should also work, and future versions will likely continue to work unless DJI patches the DUMPL param write path. The commands use standard DUMPL protocol operations that have been stable across firmware revisions.
 
-If you test it on a model or firmware version not listed here, please [open an issue](https://github.com/doesthings/FreeFCC/issues) and let us know.
+If you test it on a model or firmware version not listed here, please [open an issue](https://github.com/doesthings/FreeFCC/issues) and let me know.
 
 ## Install Guide
 
@@ -106,7 +106,7 @@ Swipe from the right edge to open ATV Launcher. Open the Files app, find your fo
 2. Open FreeFCC and tap **Connect**
 3. Tap **Enable FCC Mode** and wait for the green checkmark
 4. For 4G: tap **Turn 4G ON** (the drone needs to be connected so the app can read its serial number)
-   > **Note:** 4G activation has not been tested on hardware yet. The frame format is based on the documented DUMPL protocol, but we have not confirmed it works in practice. If you try it, please [open an issue](https://github.com/doesthings/FreeFCC/issues) with the result.
+   > **Note:** 4G activation has not been tested on hardware yet. The frame format is based on the documented DUMPL protocol, but I have not confirmed it works in practice. If you try it, please [open an issue](https://github.com/doesthings/FreeFCC/issues) with the result.
 5. To stop: tap **Stop FCC Mode** to restore CE
 6. The **Info** tab lets you query the controller's hardware and firmware version
 
@@ -158,7 +158,7 @@ Each command is a small binary packet with a magic byte (`0x55`), a header with 
 
 ### FCC Profile
 
-21 frames sent in 2 rounds with 150ms between each frame. The sequence enters service mode, sets the radio region to FCC, writes channel groups and power limits, commits the change, and exits service mode. The same 21 frames work on every DJI aircraft model we tested.
+21 frames sent in 2 rounds with 150ms between each frame. The sequence enters service mode, sets the radio region to FCC, writes channel groups and power limits, commits the change, and exits service mode. The same 21 frames work on every DJI aircraft model I tested.
 
 ### 4G Profile
 
