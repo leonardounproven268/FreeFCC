@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppRoot(viewModel: FccViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(initialPage = 0) { 4 }
+    val pagerState = rememberPagerState(initialPage = 0) { 5 }
     val scope = rememberCoroutineScope()
 
     val entrance = remember { Animatable(0f) }
@@ -138,7 +138,8 @@ private fun AppRoot(viewModel: FccViewModel) {
                 0 -> FccPage(state, viewModel)
                 1 -> InfoPage(state, viewModel)
                 2 -> LogPage(state)
-                3 -> SupportPage()
+                3 -> UpdatePage(state, viewModel)
+                4 -> SupportPage()
             }
         }
 
@@ -508,7 +509,158 @@ private fun LogPage(state: AppState) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// Page 4: Support
+// Page 4: Update
+// ═══════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun UpdatePage(state: AppState, viewModel: FccViewModel) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .padding(bottom = BottomNavHeight + 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(56.dp))
+        PageTitle("Updates", Icons.Outlined.SystemUpdate)
+
+        if (state.isCheckingUpdate) {
+            Spacer(Modifier.height(28.dp))
+            GlowCard {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(strokeWidth = 2.5.dp, color = Cyan, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.height(16.dp))
+                    BodyText("Checking GitHub for latest release...", Cyan)
+                }
+            }
+            return@Column
+        }
+
+        val info = state.updateInfo
+        if (info == null && state.updateChecked) {
+            Spacer(Modifier.height(28.dp))
+            GlowCard {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Outlined.CloudOff, null, tint = TextDim, modifier = Modifier.size(44.dp))
+                    Spacer(Modifier.height(14.dp))
+                    BodyText("Could not check for updates.", TextGray)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Make sure you're connected to Wi-Fi and try again.",
+                        color = TextDim, fontSize = 12.sp, lineHeight = 17.sp
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    GlowButton("Retry", Cyan) { viewModel.checkForUpdates() }
+                }
+            }
+            return@Column
+        }
+
+        if (info == null) return@Column
+
+        Spacer(Modifier.height(28.dp))
+
+        GlowCard {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (state.updateAvailable) "Update Available" else "Up to Date",
+                        color = if (state.updateAvailable) Green else TextGray,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Current: v${FccViewModel.APP_VERSION}",
+                        color = TextDim, fontSize = 12.sp
+                    )
+                }
+                Icon(
+                    if (state.updateAvailable) Icons.Filled.NewReleases else Icons.Filled.CheckCircle,
+                    null,
+                    tint = if (state.updateAvailable) Green else TextDim,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+
+            if (state.updateAvailable) {
+                Spacer(Modifier.height(16.dp))
+                DividerLine()
+                Spacer(Modifier.height(16.dp))
+            }
+
+            if (state.updateAvailable) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Latest:", color = TextGray, fontSize = 13.sp)
+                    Text("v${info.version}", color = Green, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Released:", color = TextGray, fontSize = 13.sp)
+                    Text(
+                        info.publishedAt.split("T").firstOrNull() ?: "",
+                        color = TextWhite, fontSize = 13.sp
+                    )
+                }
+                if (info.apkSize > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Size:", color = TextGray, fontSize = 13.sp)
+                        Text(
+                            "%.1f MB".format(info.apkSize / 1048576.0),
+                            color = TextWhite, fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            DividerLine()
+            Spacer(Modifier.height(20.dp))
+
+            Text("Changelog", color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(10.dp))
+            if (info.changelog.isNotEmpty()) {
+                Text(
+                    info.changelog,
+                    color = TextGray,
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp
+                )
+            } else {
+                BodyText("No changelog provided.", TextDim)
+            }
+
+            if (state.updateAvailable) {
+                Spacer(Modifier.height(24.dp))
+                if (state.isDownloadingUpdate) {
+                    ProgressDisplay(
+                        state.updateDownloadProgress,
+                        "Downloading update... (${(state.updateDownloadProgress * 100).toInt()}%)"
+                    )
+                } else {
+                    GlowButton("Download & Install", Green) {
+                        viewModel.downloadAndInstallUpdate()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Page 5: Support
 // ═══════════════════════════════════════════════════════════════════════
 
 @Composable
@@ -1017,6 +1169,7 @@ private fun BottomNavBar(
         Triple("FCC", Icons.Filled.Wifi, Cyan),
         Triple("Info", Icons.Filled.Info, Green),
         Triple("Log", Icons.Filled.History, Amber),
+        Triple("Update", Icons.Filled.SystemUpdate, Color(0xFFB39DDB)),
         Triple("Support", Icons.Filled.Favorite, Red)
     )
 

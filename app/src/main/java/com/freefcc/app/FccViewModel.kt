@@ -38,7 +38,14 @@ data class AppState(
     val autoFcc: Boolean = false,
     val isLedBusy: Boolean = false,
     val ledStatus: String = "",
-    val logMessages: List<String> = emptyList()
+    val logMessages: List<String> = emptyList(),
+    // Update state
+    val updateInfo: UpdateInfo? = null,
+    val isCheckingUpdate: Boolean = false,
+    val isDownloadingUpdate: Boolean = false,
+    val updateDownloadProgress: Float = 0f,
+    val updateAvailable: Boolean = false,
+    val updateChecked: Boolean = false
 )
 
 /**
@@ -53,18 +60,16 @@ data class AppState(
  */
 class FccViewModel(private val app: Application) : AndroidViewModel(app) {
 
+    companion object {
+        const val APP_VERSION = "1.4"
+    }
+
     private val _state = MutableStateFlow(AppState())
     val state: StateFlow<AppState> = _state.asStateFlow()
 
     private val transport = DumplTransport()
-    // Persists the auto-FCC toggle across app restarts
     private val prefs = app.getSharedPreferences("freefcc", Context.MODE_PRIVATE)
 
-    /**
-     * Called once from MainActivity.onCreate(). Sets up the controller model
-     * name and checks if auto-FCC is enabled. If it is, kicks off the
-     * automatic connect-and-apply sequence.
-     */
     fun init() {
         val model = try { Build.DEVICE } catch (_: Exception) { "unknown" }
         val autoEnabled = prefs.getBoolean("auto_fcc", false)
@@ -74,6 +79,8 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
             log("Auto-FCC enabled — connecting and applying...")
             autoConnectAndApply()
         }
+
+        checkForUpdates()
     }
 
     // --- Auto-FCC ---
@@ -432,6 +439,72 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
             } else {
                 log("No serial detected — is the aircraft powered on?")
             }
+        }
+    }
+
+    // --- Updates ---
+
+    fun checkForUpdates() {
+        update { copy(isCheckingUpdate = true) }
+        log("Checking for updates...")
+
+        runOnIO {
+            val info = UpdateChecker.fetchLatest()
+            if (info == null) {
+                update { copy(isCheckingUpdate = false, updateChecked = true) }
+                log("Update check failed — no internet or GitHub unreachable")
+                return@runOnIO
+            }
+
+            val isNewer = info.isNewerThan(APP_VERSION)
+            update {
+                copy(
+                    updateInfo = info,
+                    isCheckingUpdate = false,
+                    updateChecked = true,
+                    updateAvailable = isNewer
+                )
+            }
+            if (isNewer) {
+                log("Update available: v${info.version}")
+            } else {
+                log("App is up to date (v$APP_VERSION)")
+            }
+        }
+    }
+
+    fun downloadAndInstallUpdate() {
+        val info = _state.value.updateInfo ?: return
+        update { copy(isDownloadingUpdate = true, updateDownloadProgress = 0f) }
+        log("Downloading update v${info.version}...")
+
+        runOnIO {
+            val file = UpdateChecker.downloadApk(app, info) { progress ->
+                update { copy(updateDownloadProgress = progress) }
+            }
+
+            if (file == null) {
+                update { copy(isDownloadingUpdate = false, updateDownloadProgress = 0f) }
+                log("Update download failed — check your internet connection")
+                return@runOnIO
+            }
+
+            log("Update downloaded — launching installer...")
+            update { copy(isDownloadingUpdate = false, updateDownloadProgress = 1f) }
+
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(
+                    androidx.core.content.FileProvider.getUriForFile(
+                        app,
+                        "${app.packageName}.fileprovider",
+                        file
+                    ),
+                    "application/vnd.android.package-archive"
+                )
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            app.startActivity(intent)
         }
     }
 
