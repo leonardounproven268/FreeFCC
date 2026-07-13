@@ -53,21 +53,21 @@ You need both. The helper apps let you sideload FreeFCC onto the RC2.
 
 ## Compatibility
 
-**Only tested on the DJI RC2 controller.** For DJI RC Pro 2 or RC Plus controllers, use [freefcc-launcher](https://github.com/doesthings/freefcc-launcher) instead, since not all controllers can install APKs from a microSD card the way the RC2 does.
+**Tested on DJI RC2 and RC Pro 2.** The app installs directly on both controllers — no special launcher needed for FCC mode. The [freefcc-launcher](https://github.com/doesthings/freefcc-launcher) is only needed if you want 4G support on RC Pro 2 / RC Plus.
 
 | Drone | Controller | FCC | 4G | LED | Status |
 |-------|-----------|-----|-----|-----|--------|
 | DJI Mini 5 Pro | RC2 | Yes | Not tested | Yes | FCC + LED working |
 | DJI Mini 4 Pro | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Mavic 4 Pro | RC Pro 2 | Yes | Use launcher | Not tested | FCC working |
 | DJI Air 3S | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Neo 1 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Neo 2 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Avata 360 | RC2 | Yes | Not tested | Not tested | FCC working |
-| DJI Air 3S | RC2 | Yes | Not tested | Not tested | FCC working |
 | Other RC2 aircraft | RC2 | Should work | Unknown | Unknown | FCC profile is universal |
-| DJI RC Pro 2 / RC Plus | All | Use [freefcc-launcher](https://github.com/doesthings/freefcc-launcher) | - | - | Not tested with this app |
+| RC Pro 2 / RC Plus | All | Direct install | Use [freefcc-launcher](https://github.com/doesthings/freefcc-launcher) for 4G | - | FCC works without launcher |
 
-Tested on DJI RC 2 Remote Controller firmware v10.00.0700. Older firmware versions should also work, and future versions will likely continue to work unless DJI patches the DUMPL param write path.
+Tested on DJI RC 2 firmware v10.00.0700 and DJI RC Pro 2. Older firmware versions should also work, and future versions will likely continue to work unless DJI patches the DUMPL param write path.
 
 If you test it on a model or firmware version not listed here, please [open an issue](https://github.com/doesthings/FreeFCC/issues) and let me know.
 
