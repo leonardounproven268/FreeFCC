@@ -31,16 +31,16 @@ A free and open-source Android app that unlocks FCC mode, removes altitude limit
 | Feature | Description |
 |---------|-------------|
 | **FCC Unlock** | Switches the radio from CE to FCC mode for higher power and more channels |
-| **Altitude Unlock** | Raises max flight altitude to 3000m (from 120m CE / 500m FCC) by setting `height_limit_enabled=2` + `limit_height_abs=3000` |
-| **Distance Limit Removed** | Sets `max_distance_0/1=65535m` — removes the max distance geofence |
-| **NFZ Geofencing Disabled** | Sets `cfg_disable_airport_fly_limit=1` — disables no-fly-zone enforcement |
 | **4G Activation** | Enables 4G transmission on the aircraft (serial read at runtime) |
 | **LED Control** | Turn aircraft arm LEDs on or off (requires DJI Fly running with aircraft connected) |
 | **Device Info** | Queries the controller for hardware and firmware version |
 | **Auto-FCC** | Toggle to automatically connect and apply FCC every time the app opens |
-| **Offline** | Everything runs locally. No internet, no server, no tracking |
+| **Auto-Updater** | Checks GitHub for new releases and lets you download/install from the app |
+| **Offline** | Everything runs locally. No internet, no server, no tracking (except update check) |
 | **Open Profiles** | Command frames are plain JSON files you can inspect and edit |
 | **No License** | No activation, no trial, no tracking, no server contact |
+
+> **Note on altitude/distance/NFZ unlock:** This is **not possible** via DUMPL commands alone. The 120m CE altitude limit is enforced by the **DJI Fly app** via a C0 class runtime flag that overrides flight controller parameters on every connection. No FCC unlock app can bypass this — it requires modifying the DJI Fly app itself or flashing patched firmware. DUMPL parameter writes set the FC values, but the Fly app overrides them. There is no known way to bypass this without modifying the DJI Fly app or flashing patched firmware.
 
 ## Download
 

@@ -499,22 +499,45 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun installUpdate() {
-        val file = downloadedApk ?: return
+        val file = downloadedApk ?: run {
+            log("No downloaded APK found — download first")
+            return
+        }
+        if (!file.exists()) {
+            log("Downloaded APK file missing — download again")
+            downloadedApk = null
+            update { copy(isUpdateDownloaded = false) }
+            return
+        }
         try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                app, "${app.packageName}.fileprovider", file
+            )
             val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                setDataAndType(
-                    androidx.core.content.FileProvider.getUriForFile(
-                        app,
-                        "${app.packageName}.fileprovider",
-                        file
-                    ),
-                    "application/vnd.android.package-archive"
-                )
+                setDataAndType(uri, "application/vnd.android.package-archive")
                 flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            app.startActivity(intent)
-            log("Launching installer...")
+
+            if (intent.resolveActivity(app.packageManager) != null) {
+                app.startActivity(intent)
+                log("Launching installer...")
+            } else {
+                log("No installer found — use a file manager to open the APK")
+                val openIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_NO_HISTORY
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = android.content.Intent.createChooser(openIntent, "Install FreeFCC").apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                try {
+                    app.startActivity(chooser)
+                } catch (_: Exception) {
+                    log("Could not launch installer — copy APK from cache manually")
+                }
+            }
         } catch (e: Exception) {
             log("Install failed: ${e.message}")
         }
