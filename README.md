@@ -168,7 +168,7 @@ Each command is a small binary packet with a magic byte (`0x55`), a header with 
 
 21 frames sent in 2 rounds with 150ms between each frame. The sequence enters service mode, sets the radio region to FCC, writes channel groups and power limits, commits the change, and exits service mode. The same 21 frames work on every DJI aircraft model I tested.
 
-One of the frames (frame 2) writes to the flight controller parameter `g_config.flying_limit.max_height_0` and sets it to 500 meters. This is the FCC regulatory altitude ceiling, which replaces the 120m CE limit. So enabling FCC mode also raises the altitude limit from 120m to 500m automatically.
+One of the frames (frame 2) sends an Assistant Unlock command (cmd 0xDF) to the flight controller, which is required before any parameter write on modern DJI aircraft (WM330 and newer). Then frame 3 writes to the flight controller parameter `g_config.flying_limit.max_height_0` and sets it to 500 meters, and frame 4 writes `max_height_1` to the same value. This is the FCC regulatory altitude ceiling, which replaces the 120m CE limit. Without the Assistant Unlock command, the flight controller silently rejects the parameter write, which is why some users see FCC mode but still have a 120m altitude limit.
 
 ### 4G Profile
 
