@@ -14,3 +14,7 @@ gradle/.gradle/
 
 REMOTE_ID_INTERNAL.md
 
+keystore.properties
+*.jks
+*.keystore
+

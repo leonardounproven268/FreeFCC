@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -16,6 +18,38 @@ android {
         versionName = "1.4.01"
     }
 
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val keystoreProps = Properties().apply {
+        if (keystorePropsFile.exists()) {
+            keystorePropsFile.inputStream().use { load(it) }
+        }
+    }
+    val releaseStoreFile = keystoreProps.getProperty("storeFile")
+        ?: System.getenv("SIGNING_STORE_FILE")
+    val releaseStorePassword = keystoreProps.getProperty("storePassword")
+        ?: System.getenv("SIGNING_STORE_PASSWORD")
+    val releaseKeyAlias = keystoreProps.getProperty("keyAlias")
+        ?: System.getenv("SIGNING_KEY_ALIAS")
+    val releaseKeyPassword = keystoreProps.getProperty("keyPassword")
+        ?: System.getenv("SIGNING_KEY_PASSWORD")
+    val hasReleaseSigning = !releaseStoreFile.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank()
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -24,7 +58,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = null
+            }
         }
     }
 

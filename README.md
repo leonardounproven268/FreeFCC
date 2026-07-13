@@ -59,6 +59,7 @@ You need both. The helper apps let you sideload FreeFCC onto the RC2.
 |-------|-----------|-----|-----|-----|--------|
 | DJI Mini 5 Pro | RC2 | Yes | Not tested | Yes | FCC + LED working |
 | DJI Mini 4 Pro | RC2 | Yes | Not tested | Not tested | FCC working |
+| DJI Air 3S | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Neo 1 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Neo 2 | RC2 | Yes | Not tested | Not tested | FCC working |
 | DJI Avata 360 | RC2 | Yes | Not tested | Not tested | FCC working |
@@ -266,12 +267,25 @@ export JAVA_HOME=/path/to/jdk-17
 export PATH="$JAVA_HOME/bin:$PATH"
 
 cd /path/to/FreeFCC
-./gradlew assembleRelease
+./gradlew assembleRelease --no-daemon
 ```
 
 Run the unit tests with `./gradlew testDebugUnitTest`.
 
-Sign the output APK with your own keystore or the debug one.
+### Release signing
+
+Release builds are **unsigned** by default. To produce a signed release APK, create a keystore and a local `keystore.properties` file (gitignored) pointing at it:
+
+1. Generate a keystore (one-time):
+   ```bash
+   keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
+   ```
+2. Copy `keystore.properties.example` to `keystore.properties` and fill in your keystore path and passwords.
+3. Run `./gradlew assembleRelease` — the build picks up `keystore.properties` automatically and signs the APK.
+
+CI builds can sign via repository secrets instead of the local file: set `SIGNING_STORE_FILE`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD` (and `SIGNING_KEYSTORE_B64` as a base64-encoded keystore) in GitHub Actions.
+
+> **Important:** Previous releases (v1.4.01 and earlier) were signed with Android's shared debug certificate. This has been fixed — release builds no longer fall back to the debug key. If you installed an older debug-signed APK, you will need to uninstall it before installing an APK signed with a new key.
 
 ## License
 
