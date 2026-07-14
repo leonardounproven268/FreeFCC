@@ -124,6 +124,7 @@ object Profiles {
     private fun hexToBytes(hex: String): ByteArray {
         val clean = hex.replace(" ", "").replace("\n", "")
         if (clean.isEmpty()) return ByteArray(0)
+        require(clean.length % 2 == 0) { "Odd-length hex string: $hex" }
         return ByteArray(clean.length / 2) { i ->
             clean.substring(i * 2, i * 2 + 2).toInt(16).toByte()
         }

@@ -107,6 +107,12 @@ class FccKeepaliveService : Service() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
+                // If the profile failed to load, don't become a silent
+                // foreground no-op — stop immediately.
+                if (cachedFrames == null) {
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
                 startForeground(NOTIFICATION_ID, createNotification())
                 startKeepaliveLoop()
             }
@@ -122,6 +128,7 @@ class FccKeepaliveService : Service() {
                 // Delay at the loop start, not the end, so the interval is
                 // INTERVAL_MS regardless of how long the send takes. The first
                 // tick fires immediately (no delay before the first send).
+                delay(INTERVAL_MS)
                 if (HardwareLock.tryBegin()) {
                     try {
                         transport.sendFrames(
@@ -138,7 +145,6 @@ class FccKeepaliveService : Service() {
                         HardwareLock.end()
                     }
                 }
-                delay(INTERVAL_MS)
             }
         }
     }
@@ -163,11 +169,20 @@ class FccKeepaliveService : Service() {
         } else {
             Notification.Builder(this)
         }
+        // Tapping the notification opens the app
+        val openIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            this, 0, openIntent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
         return builder
             .setContentTitle("FreeFCC")
             .setContentText("Maintaining FCC mode...")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
+            .setContentIntent(pendingIntent)
             .build()
     }
 

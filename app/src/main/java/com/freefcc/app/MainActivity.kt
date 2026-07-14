@@ -773,7 +773,11 @@ private fun SupportPage() {
         // Big Ko-fi button
         Button(
             onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/freefcc")))
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/freefcc")))
+                } catch (_: Exception) {
+                    // No browser installed (RC2 has no web browser)
+                }
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFFF5E5B),
@@ -794,7 +798,11 @@ private fun SupportPage() {
         // GitHub button
         Button(
             onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/doesthings/FreeFCC")))
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/doesthings/FreeFCC")))
+                } catch (_: Exception) {
+                    // No browser installed (RC2 has no web browser)
+                }
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,

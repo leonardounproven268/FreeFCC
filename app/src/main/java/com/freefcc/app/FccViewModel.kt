@@ -65,7 +65,7 @@ data class AppState(
 class FccViewModel(private val app: Application) : AndroidViewModel(app) {
 
     companion object {
-        const val APP_VERSION = "1.4.6"
+        const val APP_VERSION = "1.4.7"
     }
 
     private val _state = MutableStateFlow(AppState())
@@ -208,6 +208,9 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
                     }
                     log("Auto-FCC: apply failed — try manually")
                 }
+            } catch (e: Exception) {
+                log("Auto-FCC error: ${e.message}")
+                update { copy(status = "disconnected", message = "Auto-FCC error: ${e.message}", isBusy = false, busyProgress = 0f) }
             } finally {
                 endHardwareOp()
             }
@@ -327,6 +330,11 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
         if (!beginHardwareOp()) {
             log("Hardware busy — please wait for the current operation to finish.")
             return
+        }
+        // Stop keepalive first — otherwise it re-applies FCC 2 seconds after
+        // we restore CE, undoing the user's intent.
+        if (_state.value.isKeepaliveRunning) {
+            stopKeepalive()
         }
         update { copy(status = "restoring", isBusy = true, busyProgress = 0f, message = "Restoring CE mode...") }
         log("Restoring CE mode...")
@@ -485,6 +493,9 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
                     update { copy(is4gBusy = false, fourGMessage = "4G apply failed — is the 4G dongle connected?") }
                     log("4G activation failed — at least one frame write failed on the Unix socket")
                 }
+            } catch (e: Exception) {
+                log("4G activation error: ${e.message}")
+                update { copy(is4gBusy = false, fourGMessage = "4G error: ${e.message}") }
             } finally {
                 endHardwareOp()
             }
@@ -622,6 +633,14 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
     // --- Updates ---
 
     fun checkForUpdates() {
+        // Rate-limit: don't hit GitHub API more than once per hour.
+        // Unauthenticated limit is 60 requests/hour per IP.
+        val lastCheck = prefs.getLong("last_update_check", 0)
+        val now = System.currentTimeMillis()
+        if (now - lastCheck < 60 * 60 * 1000 && _state.value.updateChecked) {
+            return
+        }
+        prefs.edit().putLong("last_update_check", now).apply()
         update { copy(isCheckingUpdate = true) }
         log("Checking for updates...")
 
@@ -654,6 +673,7 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun downloadUpdate() {
         val info = _state.value.updateInfo ?: return
+        if (_state.value.isDownloadingUpdate) return
         update { copy(isDownloadingUpdate = true, updateDownloadProgress = 0f, isUpdateDownloaded = false) }
         log("Downloading update v${info.version}...")
 
@@ -688,18 +708,13 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
         update { copy(isBusy = true, message = "Preparing install...") }
         runOnIO {
             try {
-                // Copy APK to external storage where the file manager can see it
-                val destDir = java.io.File(android.os.Environment.getExternalStorageDirectory(), "FreeFCC")
-                destDir.mkdirs()
-                val destFile = java.io.File(destDir, "FreeFCC_update.apk")
-                file.copyTo(destFile, overwrite = true)
-                log("Update saved to SD card: ${destFile.absolutePath}")
-
-                // Launch the system installer via FileProvider ACTION_VIEW.
-                // Previously this also fired ACTION_GET_CONTENT (file manager) which
-                // competed with the installer for focus on DJI's custom launcher.
+                // Use the cached APK directly via FileProvider — no external storage
+                // copy needed (scoped storage on Android 10+ blocks writing to the
+                // root of external storage without MANAGE_EXTERNAL_STORAGE, which
+                // we don't have). The cache-path "updates/" in file_paths.xml
+                // covers cacheDir/updates/ where the APK already lives.
                 val uri = androidx.core.content.FileProvider.getUriForFile(
-                    app, "${app.packageName}.fileprovider", destFile
+                    app, "${app.packageName}.fileprovider", file
                 )
                 val viewIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
                     setDataAndType(uri, "application/vnd.android.package-archive")
@@ -710,8 +725,7 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
                     app.startActivity(viewIntent)
                     log("Launching installer...")
                 } catch (_: Exception) {
-                    // Installer unavailable — fall back to telling the user where the file is.
-                    log("Installer unavailable — open 02_FileManager and tap FreeFCC_update.apk")
+                    log("Installer unavailable — try installing via adb or a file manager")
                 }
             } catch (e: Exception) {
                 log("Install failed: ${e.message}")

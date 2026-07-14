@@ -349,7 +349,10 @@ class DumlTransport {
                 try {
                     val n = input.read(buf)
                     if (n > 0) {
-                        buffer.append(String(buf, 0, n))
+                        // Use ISO-8859-1 for 1:1 byte-to-char mapping — DUML
+                        // telemetry is binary and UTF-8 decoding corrupts
+                        // byte sequences that look like multi-byte chars.
+                        buffer.append(String(buf, 0, n, Charsets.ISO_8859_1))
                         pattern.find(buffer.toString())?.let { return it.value }
                     }
                 } catch (_: IOException) { /* read timeout — keep trying */ }
