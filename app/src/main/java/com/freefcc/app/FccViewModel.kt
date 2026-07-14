@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,21 +74,20 @@ class FccViewModel(private val app: Application) : AndroidViewModel(app) {
     private val transport = DumlTransport()
     private val prefs = app.getSharedPreferences("freefcc", Context.MODE_PRIVATE)
 
-    /** Serializes every controller-/aircraft-facing operation so frames never overlap. */
-    private val hardwareMutex = Mutex()
-
-    /** Claims the hardware lock for one operation. Returns false if another is already running. */
-    private fun beginHardwareOp(): Boolean {
-        if (!hardwareMutex.tryLock()) return false
-        update { copy(isHardwareBusy = true) }
-        return true
+    init {
+        // MainActivity.onCreate() calls init() below on every Activity re-creation
+        // (e.g. config change), but this class init{} runs exactly once per
+        // ViewModel instance — the collector must live here, not in init().
+        viewModelScope.launch {
+            HardwareLock.busy.collect { busy -> update { copy(isHardwareBusy = busy) } }
+        }
     }
 
-    /** Releases the hardware lock. Must run in a finally block covering every exit path. */
-    private fun endHardwareOp() {
-        update { copy(isHardwareBusy = false) }
-        hardwareMutex.unlock()
-    }
+    /** Claims the shared hardware lock for one operation. Returns false if another (including the keepalive service) is already running. */
+    private fun beginHardwareOp(): Boolean = HardwareLock.tryBegin()
+
+    /** Releases the shared hardware lock. Must run in a finally block covering every exit path. */
+    private fun endHardwareOp() = HardwareLock.end()
 
     fun init() {
         val model = try { Build.DEVICE } catch (_: Exception) { "unknown" }

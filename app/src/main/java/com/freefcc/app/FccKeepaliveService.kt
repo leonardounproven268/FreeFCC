@@ -81,17 +81,22 @@ class FccKeepaliveService : Service() {
         keepaliveJob?.cancel()
         keepaliveJob = scope.launch {
             while (true) {
-                try {
-                    val profile = Profiles.load(this@FccKeepaliveService, "fcc_keepalive.json")
-                    transport.sendFrames(
-                        frames = profile.frames,
-                        rounds = 1,
-                        interFrameDelayMs = profile.interFrameDelay,
-                        readWindowMs = profile.readWindowMs,
-                        port = profile.port
-                    )
-                } catch (_: Exception) {
+                if (HardwareLock.tryBegin()) {
+                    try {
+                        val profile = Profiles.load(this@FccKeepaliveService, "fcc_keepalive.json")
+                        transport.sendFrames(
+                            frames = profile.frames,
+                            rounds = 1,
+                            interFrameDelayMs = profile.interFrameDelay,
+                            readWindowMs = profile.readWindowMs,
+                            port = profile.port
+                        )
+                    } catch (_: Exception) {
+                    } finally {
+                        HardwareLock.end()
+                    }
                 }
+                // else: a manual operation (or another tick) holds the lock — skip this tick, never queue/block.
                 delay(2000)
             }
         }
